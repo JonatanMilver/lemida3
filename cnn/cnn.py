@@ -99,7 +99,6 @@ class Flowers102(VisionDataset):
         from scipy.io import loadmat
 
         set_ids = loadmat(self._base_folder / self._file_dict["setid"][0], squeeze_me=True)
-        image_ids = set_ids[self._splits_map[self._split]].tolist()
 
         labels = loadmat(self._base_folder / self._file_dict["label"][0], squeeze_me=True)
         image_id_to_label = dict(enumerate((labels["labels"] - 1).tolist(), 1))
@@ -110,8 +109,8 @@ class Flowers102(VisionDataset):
         ids_to_lbls["index"] = ids_to_lbls.index
         del ids_to_lbls[0]
 
-        X_train, X_test, Y_train, Y_test = train_test_split(ids_to_lbls[["index"]], ids_to_lbls["label"], test_size=0.5)
-        X_val, X_test, Y_val, Y_test = train_test_split(X_test, Y_test, test_size=0.5)
+        X_val, X_test, Y_val, Y_test, X_train, Y_train = self.split_data(ids_to_lbls)
+
 
         image_ids, labels = None, None
         if self._split == 'train':
@@ -165,6 +164,12 @@ class Flowers102(VisionDataset):
         for id in ["label", "setid"]:
             filename, md5 = self._file_dict[id]
             download_url(self._download_url_prefix + filename, str(self._base_folder), md5=md5)
+
+    def split_data(self, ids_to_lbls):
+        X_train, X_test, Y_train, Y_test = train_test_split(ids_to_lbls[["index"]], ids_to_lbls["label"], test_size=0.5)
+        X_val, X_test, Y_val, Y_test = train_test_split(X_test, Y_test, test_size=0.5)
+        return X_val, X_test, Y_val, Y_test, X_train, Y_train
+
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
